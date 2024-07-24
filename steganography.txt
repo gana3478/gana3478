@@ -1,0 +1,71 @@
+import cv2
+import os
+
+def text_to_binary(text):
+    """Convert text to binary string."""
+    return ''.join(format(ord(char), '08b') for char in text)
+
+def binary_to_text(binary_str):
+    """Convert binary string to text."""
+    binary_chunks = [binary_str[i:i+8] for i in range(0, len(binary_str), 8)]
+    return ''.join(chr(int(chunk, 2)) for chunk in binary_chunks)
+
+def embed_text_in_image(image_path, text, output_image_path):
+    """Embed text into an image and save the result."""
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Error loading image from {image_path}.")
+        return
+    
+    binary_text = text_to_binary(text) + '1111111111111110'  # End-of-text marker
+    bit_index = 0
+    
+    for row in image:
+        for pixel in row:
+            for channel in range(3):  # R, G, B channels
+                if bit_index < len(binary_text):
+                    pixel[channel] = (pixel[channel] & 0xFE) | int(binary_text[bit_index])
+                    bit_index += 1
+    
+    cv2.imwrite(output_image_path, image)
+    os.startfile(output_image_path)
+    print(f"Text has been embedded and saved as {output_image_path}")
+
+def retrieve_text_from_image(image_path):
+    """Extract hidden text from an image."""
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Error loading image from {image_path}.")
+        return
+    
+    binary_text = ""
+    for row in image:
+        for pixel in row:
+            for channel in range(3):  # R, G, B channels
+                binary_text += str(pixel[channel] & 1)
+    
+    end_marker = '1111111111111110'
+    if end_marker in binary_text:
+        binary_text = binary_text[:binary_text.index(end_marker)]
+        extracted_text = binary_to_text(binary_text)
+        print("Extracted text:", extracted_text)
+    else:
+        print("No hidden text found in the image.")
+
+def main():
+    """Main function to handle user input for hiding or extracting text."""
+    operation = input("Type 'hide' to embed text or 'extract' to retrieve text: ").strip().lower()
+    if operation == 'hide':
+        img_path = input("Provide the image file path: ")
+        text = input("Enter the text to embed: ")
+        output_img_path = "encoded_image.png"
+        embed_text_in_image(img_path, text, output_img_path)
+    elif operation == 'extract'
+        img_path = input("Provide the image file path: ")
+        retrieve_text_from_image(img_path)
+    else:
+        print("Invalid option. Please enter 'hide' or 'extract'.")
+
+# Execute the main function
+if __name__ == "__main__":
+    main()
